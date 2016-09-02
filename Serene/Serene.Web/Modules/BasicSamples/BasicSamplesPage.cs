@@ -121,5 +121,46 @@ namespace Serene.BasicSamples.Pages
         {
             return View(MyViews.Grids.VSGalleryQA.Index);
         }
+        
+        public ActionResult StoredProcedureGrid()
+        {
+            return View(MyViews.Grids.StoredProcedureGrid.Index);
+        }
+
+        public ActionResult DatatableGrid()
+        {
+            DateTime CurrentDate = Convert.ToDateTime("06/May/1998");
+            ViewBag.begin_date = CurrentDate.ToString("dd/MM/yyyy") + " - " + CurrentDate.ToString("dd/MM/yyyy");
+
+            using (var connection = ConnectionHelper.GetConnection())
+            {
+
+                IEnumerable<PeriodicGrossSalesModel> cachedModel = connection.Query<PeriodicGrossSalesModel>("PeriodicCustomerWiseGrossSale",
+                                                            new { BeginDate = CurrentDate, EndDate = CurrentDate },
+                                                            null, true, null, CommandType.StoredProcedure);
+
+                return View(MyViews.Grids.DatatableGrid.DatatableGridIndex, cachedModel);
+            }
+        }
+
+        public ActionResult GetPeriodData(string RangeDate)
+        {
+            string StartDate = string.Empty;
+            string EndDate = string.Empty;
+
+            string[] var = RangeDate.Split('-');
+            StartDate = var[0].Trim();
+            EndDate = var[1].Trim();
+
+            using (var connection = ConnectionHelper.GetConnection())
+            {
+                connection.Execute("set dateformat dmy");
+                IEnumerable<PeriodicGrossSalesModel> cachedModel = connection.Query<PeriodicGrossSalesModel>("PeriodicCustomerWiseGrossSale",
+                                                            new { BeginDate = StartDate, EndDate = EndDate },
+                                                            null, true, null, CommandType.StoredProcedure);
+
+                return PartialView(MyViews.Grids.DatatableGrid._PeriodicTable, cachedModel);
+            }
+        }
     }
 }
